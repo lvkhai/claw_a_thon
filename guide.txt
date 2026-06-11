@@ -1,0 +1,99 @@
+GreenNode Claw-a-thon 2026 Official Guide 
+CONTESTANT OFFICIAL USERGUIDE
+
+Để được giải đáp thắc mắc và hỗ trợ nhanh chóng, đừng quên join vào group Teams chung của cuộc thi để nhận thông báo, tài liệu và các cập nhật quan trọng từ BTC: Link
+Section 1: Rulebook & Submission Guide
+	•	Đọc Rulebook trước khi build
+Trước khi bắt đầu, tất cả Starters cần đọc kỹ rulebook để đảm bảo hành trình build agent được an toàn và thành công.
+Rulebook chính thức: https://greennode.ai/claw-a-thon-rulebook
+	•	Submission Requirements
+Deadline nộp bài: 17/06/2026 lúc 12:00 (giờ Việt Nam)
+Mỗi team cần nộp đủ các hạng mục sau (mục 1–3 bắt buộc, mục 4 tùy chọn):
+Agent Source Code trên GitHub — đường dẫn đến các thông tin về agent trên Github
+Video Demo — video demo dài 2–3 phút, trình bày agent hoạt động thực tế
+Use Case Description — mô tả use case 100–200 chữ, giải thích agent giải quyết vấn đề gì 
+Agent Endpoint (Optional) — Đường link để sử dụng thử/test agent (Chỉ áp dụng với agent theo dạng web-based)  
+⚠️ Lưu ý quan trọng: Tất cả đường link (Github link, video demo) phải để chế độ công khai tại thời điểm nộp và trong suốt thời gian voting. Link private sẽ khiến bài dự thi không hợp lệ.
+Trang nộp bài: https://greennode.ai/events/greennode-claw-a-thon
+(Link nộp bài sẽ được mở sau Training Workshop)
+	•	Sau khi Submit
+Chỉnh sửa trước deadline: Sau khi submit, các team có thể chỉnh sửa nội dung đã nộp cho đến 17/06/2026 12:00. Sau thời điểm này form sẽ đóng.
+Kết quả review từ BTC: BTC sẽ review tất cả submissions và trả về kết quả Pass / Fail:
+Pass → bài thi được giữ nguyên, không chỉnh sửa thêm
+Fail → team nhận email từ BTC kèm lý do và link để chỉnh sửa lại project, deadline chỉnh sửa đến hết 18/06/2026. Sau khi review các bài nộp lại, kết quả pass/fail sẽ được cập nhật vào ngày 19/06/2026.
+Voting page sẽ được mở vào 9h00 ngày 22/06/2026.
+Section 2: Before You Start
+Trước khi bắt đầu xây dựng và triển khai agent, các Starter sẽ cần cài đặt các bộ công cụ để bổ trợ trong quá trình xây dựng và triển khai use case agent.
+	•	Cài đặt Docker Desktop App (Bản Official): Docker sẽ được sử dụng để triển khai agent lên Agentbase trong quá trình tham gia cuộc thi. Link cài đặt: http://docs.docker.com/get-started/introduction/get-docker-desktop/
+Lưu ý: Với một số thiết bị, đặc biệt là máy Windows, tính năng ảo hóa có thể đang bị tắt, dẫn đến việc cài đặt hoặc chạy Docker không thành công. Trường hợp cần hỗ trợ, các bạn có thể liên hệ IT Helpdesk để kiểm tra và xử lý trước khi tham gia training
+	•	Cài đặt GitHub Desktop App GitHub Desktop giúp các bạn thao tác với source code dễ dàng hơn, đặc biệt với các bạn chưa quen dùng Git bằng command line. Link cài đặt: https://desktop.github.com/download/
+	•	Tạo tài khoản GitHub: Mỗi bạn vui lòng tạo sẵn tài khoản GitHub để có thể quản lý repo agent và làm việc cùng team trong suốt cuộc thi. Link đăng ký: https://github.com/signup
+	•	Cài đặt Git CLI: Git CLI sẽ hỗ trợ các thao tác cơ bản với source code của agent cũng như bộ skill AgentBase của GreenNode Link cài đặt: https://git-scm.com/install/
+	•	
+Section 3: Material Links
+3.1. Về các webinar:
+Hai webinar ghi hình lại để bạn xem theo nhu cầu — chọn webinar phù hợp với giai đoạn bạn đang ở.
+	•	Claw-a-thon Orientation Webinar: Bạn có thể xem lại webinar số 1 tại ĐÂY. Xem khi: bạn muốn nắm tổng quan cuộc thi — luật chơi, timeline, cách chấm và cách nộp bài.
+	•	Webinar 02: Từ prompt đến Agent thực thi. Bạn có thể xem lại webinar số 2 tại ĐÂY. Xem khi: bạn bắt đầu bắt tay vào build — hiểu quy trình đi từ ý tưởng/prompt đến một agent chạy được.
+3.2. Các đường link và support doc chính thức từ GreenNode
+Các tài nguyên chính thức bạn sẽ dùng xuyên suốt cuộc thi — mỗi link kèm ghi chú dùng khi nào.
+	•	Portal: https://aiplatform.console.vngcloud.vn/  Portal Service của GreenNode sẽ dùng trong trường hợp bạn muốn truy xuất các API Key, IAM account, điều chỉnh ví credit hoặc kiểm tra xem agent đã chạy ổn định trên AgentBase với các module Runtime, Access Control và Memory.
+Trong lần đăng nhập đầu tiên, bạn cần đăng nhập GreenNode AI Platform và đổi mật khẩu. Bước này là bắt buộc để đảm bảo bảo mật cho tài khoản và tài nguyên của team.
+	•	User guide: https://docs.vngcloud.vn/vng-cloud-document/vn/ai-stack/agent-base  Dùng khi bạn cần tra cứu hướng dẫn chi tiết về AgentBase — cách thao tác từng bước trên Portal cũng như tìm hiểu kỹ hơn về chức năng, nhiệm vụ của từng module trong AgentBase trong việc triển khai agent của bạn
+	•	Skill AgentBase latest: https://github.com/vngcloud/greennode-agentbase-skills  Bạn có thể dễ dàng triển khai agent local trên nền tảng cloud của AgentBase bằng việc import/clone bộ skill AgentBase vào folder agent mà bạn đang thao tác. Bộ skill này được triển khai hoàn toàn tự động mà không cần phải setup trước trên GreenNode portal. AgentBase skill tương thích với hầu hết các công cụ vibe code, CLI và IDE phổ biến hiện nay.
+	•	Sample link: vngcloud/clawathon-2026-sample-agents  Agent mẫu được cung cấp để tham khảo cấu trúc và cách build trước khi tự làm. Sample chỉ mang tính chất tham khảo, không phải là cấu trúc đúng duy nhất và không cho phép sao chép y nguyên.
+	•	Các kênh hướng dẫn và request tool access từ BTC: https://workdrive.zohoexternal.com/file/5gca089643260c84a4ea2b82970cdec9f8159
+
+Section 4: Best Practice Guide
+Mẹo và kinh nghiệm để build AI agent chất lượng trong 7 ngày
+4.1. Best practice:
+Một số kỹ năng (skill) và mẹo nên tham khảo để build agent nhanh và chất lượng:
+Agent Build Skill: https://github.com/khoapnt-vng/superpowers-plus-greennode-agentbase
+4.2. Mẹo xử lý khi gặp các tình huống trong GreenNode AI portal
+	•	Quản lý credit trong ví: Mỗi team được cấp một ví tổng (mặc định 5 triệu) và một ví MaaS (Model-as-a-Service, mặc định 5 triệu) — ví MaaS là phần dùng để gọi model AI. Khi ví MaaS hết, bạn có thể chuyển thêm tiền từ ví tổng sang.  Lưu ý: chỉ chuyển vừa đủ, nên giữ lại tối thiểu 2 triệu trong ví tổng cho các dịch vụ khác (runtime, container registry, openclaw one-click). Thao tác chuyển tiền không thể hoàn lại, nên hãy cân nhắc kỹ trước khi chuyển.
+Guide chuyển credit trong ví thật sang ví MaaS: https://docs.vngcloud.vn/vng-cloud-document/ai-stack/ai-platform/model-as-a-service/pricing 
+	•	Trong các account được cấp cho các team, BTC đã tạo sẵn IAM account và gửi thông tin cho từng team qua email. Trong trường hợp cần tạo thêm IAM account có thể tham khảo guide để tạo thêm account theo nhu cầu sử dụng Hướng dẫn tạo IAM account: https://docs.vngcloud.vn/vng-cloud-document/datasync/quan-ly-truy-cap/quan-ly-tai-khoan-truy-cap-datasync/tai-khoan-nguoi-dung-iam/khoi-tao-tai-khoan-iam-user-account 
+	•	Nếu bạn muốn dùng model của GreenNode trong các công cụ vibe code (như Claude CLI, Codex CLI), hãy tham khảo hướng dẫn dưới đây: Hướng dẫn switch GreenNode model: https://docs.vngcloud.vn/vng-cloud-document/vn/ai-stack/agent-base/ai-coding  
+
+Section 5: Troubleshooting
+Tổng hợp các lỗi thường gặp trong quá trình xây dựng Agent và cách fix:
+1. Account & Quyền truy cập (Access)
+1.1. Nếu mình chưa có account Claude Teams/ Enterprise hay ChatGPT Plus thì có thể xây dựng được agent không?
+Được. Nếu bạn chưa có các tính năng trả phí như Claude Cowork hay Claude Code, bạn vẫn có thể dùng Codex (gói miễn phí). Ngoài ra, nhiều IDE (phần mềm lập trình) như Visual Studio Code hoặc Antigravity cũng có extension cho phép chat và "vibe code" (lập trình bằng hội thoại với AI) với các model miễn phí.
+2. Truy cập Repo Skills AgentBase (Git)
+2.1. Repo báo private khi thực hiện lệnh git clone cho bộ skill của AgentBase
+Lỗi này thường xảy ra khi máy bạn chưa cài Git CLI hoặc GitHub Desktop.  Cách khắc phục: bạn có thể tải bộ skill trực tiếp từ trang GitHub (dạng file nén) rồi đưa vào folder build Agent, thay vì dùng lệnh git clone. Tuy nhiên, bạn vẫn nên cài Git CLI hoặc GitHub Desktop, vì sau này cần đến chúng để đẩy (push) source code của agent lên GitHub.  Nếu dùng Claude Cowork, xem mục How to push repo to Github với Claude Cowork.
+2.2. Lỗi "Git is required for local sessions" trong Claude Code
+Nếu chưa cài Git CLI, khi mở Claude Code, chọn folder và import link bộ skill AgentBase, bạn sẽ thấy lỗi: "Git is required for local sessions". Để khắc phục, hãy cài Git CLI tại: https://git-scm.com/install/
+3. Cấu trúc Folder để chứa Agent
+3.1. Agent và bộ skill AgentBase cần được đưa vào một folder chung
+Khi tạo agent, bạn cần một folder để chứa source code của agent. Bộ skill AgentBase cũng phải được import (hoặc git clone) vào chính folder đó. Nếu source code của agent và bộ skill AgentBase nằm ở hai folder khác nhau, quá trình build agent và chạy bộ skill có thể bị lỗi.
+Gợi ý: khi bắt đầu, hãy yêu cầu AI bằng câu prompt: "Tạo 1 folder ở local làm nơi chứa agent".
+
+3.2. Agent không hoạt động khi folder không nằm ở Local
+Nếu để agent trong thư mục Downloads, agent có thể không hoạt động. Để các công cụ truy cập được vào folder của agent, bạn nên đặt nó ở một vị trí cố định trên máy (local) — ví dụ trong thư mục Documents hoặc một thư mục làm việc riêng — và chỉ rõ đường dẫn đó cho AI.
+4. Công cụ & Extension cần cài
+4.1. Cài extension Claude Code cho VSCode
+Các IDE (phần mềm lập trình) cho phép cài thêm extension như Claude Code và Codex. Nếu muốn dùng Claude Code hoặc Codex ngay trong Visual Studio Code hay Antigravity, bạn chỉ cần cài extension tương ứng để build agent.
+4.2. Yêu cầu update Node.js / Python đang chạy phiên bản cũ để chạy skill
+Nếu máy bạn đang chạy Node.js hoặc Python phiên bản cũ, thì trong lúc chạy bộ skill AgentBase, Claude hoặc Codex có thể yêu cầu cập nhật lên phiên bản mới hơn. Lúc này bạn chỉ cần đồng ý (approve), Claude Code hoặc Codex sẽ tự động cập nhật lên phiên bản phù hợp rồi chạy tiếp.
+4.3. Khi cài Docker gặp lỗi update WSL 
+Sao chép dòng lệnh mà hệ thống báo, mở Terminal trên máy và dán lệnh vào để chạy. Nếu cài đặt Linux (WSL) thành công thì bạn có thể tiếp tục cài Docker.
+Nếu gặp lỗi 403 Forbidden, nguyên nhân thường là tính năng ảo hóa (Hyper-V) trên máy chưa được bật. Hãy liên hệ IT Helpdesk để được hỗ trợ.
+5. Luồng build Agent trên AgentBase
+5.1. Đẩy agent rỗng lên AgentBase khi chạy skills mà chưa build agent
+Bộ skill chạy theo quy trình 9 bước để triển khai agent lên AgentBase. Nếu bạn chạy hết quy trình này khi use case của agent chưa được xây dựng xong, agent vẫn được triển khai nhưng chưa có chức năng — tức là đã có runtime và phân quyền truy cập (access control), nhưng bản thân agent thì chưa làm được gì.
+Vì vậy, nếu build agent từ link bộ skill ngay từ đầu, sau khi thêm credential xong (đây là bước 1 trong 9 bước lên AgentBase), bạn hãy DỪNG lại để xây dựng agent trước; build xong mới đi tiếp bước 2.
+Một cách khác là dùng công cụ vibe code để build agent trước, sau đó mới import (hoặc clone) bộ skill AgentBase vào để chạy tiếp.
+5.2. Không thể share link agent public được
+Sau khi build và chạy agent trên máy (local) xong, khi đẩy agent lên runtime, đường link truy cập agent có thể vẫn trỏ về localhost (địa chỉ chỉ chạy được trên máy bạn). Vì vậy, mở link này trên trình duyệt khác hoặc gửi cho người khác sẽ báo lỗi "Not Found".
+Trong trường hợp đó, bạn hãy thêm một câu prompt yêu cầu AI chuyển endpoint sang chế độ public, để có một đường link hoạt động được mà bạn có thể chia sẻ cho người khác.
+Đây cũng chính là đường link để chia sẻ agent cho các Starter khác cùng trải nghiệm.
+6. Lỗi khi nhập IAM Credential
+6.1. IAM credential gặp lỗi sai/thiếu/không authen được
+Khi nhập IAM credential mà hệ thống báo không xác thực (authenticate) được, hãy kiểm tra lại xem khi sao chép có bị thừa, thiếu ký tự hoặc dư khoảng trắng ở đầu/cuối hay không, rồi nhập lại.
+7. Usecase Memory (lưu trữ memory)
+7.1. Memory của agent lưu ở local thay vì được đẩy lên AgentBase
+Khi mới build agent trên máy (local), các công cụ AI thường gợi ý lưu file memory.md ngay tại máy. Tuy nhiên, để agent chạy ổn định và ghi nhớ tốt, bạn nên đưa phần này lên tính năng Memory của AgentBase. Khi đó, memory được lưu tập trung, dài hạn và không bị mất khi bạn đổi máy.
+Bạn có thể ra prompt yêu cầu agent đẩy memory từ máy lên module Memory của AgentBase; bộ skill sẽ tự thực hiện việc này.
+
