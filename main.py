@@ -140,7 +140,7 @@ try:
     with open(prompt_path, "r", encoding="utf-8") as f:
         SYSTEM_PROMPT = f.read()
 except Exception as e:
-    SYSTEM_PROMPT = "Bạn là Trợ lý Onboarding hỗ trợ các thành viên mới gia nhập đội ngũ QE Team PCT tại Zalopay. Bạn có thắc mắc hay muốn đi vào phần nào ở Zalopay không?"
+    SYSTEM_PROMPT = "Bạn là Trợ lý Onboarding hỗ trợ riêng cho các thành viên QE mới gia nhập (không dành cho Frontend, Developer, hay PO) thuộc đội ngũ QE_Consumer Team tại Zalopay. Bạn có thắc mắc hay muốn đi vào phần nào ở Zalopay không?"
 
 # create_agent builds a compiled LangGraph StateGraph with tool-calling support.
 # checkpointer: persists conversation state via AgentBase Memory (short-term)

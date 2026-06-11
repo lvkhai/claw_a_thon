@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GreenNode Team Onboarding Assistant</title>
+    <title>QE_Consumer Team Onboarding Assistant</title>
     <!-- Canvas Confetti for celebrations -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Google Fonts -->
@@ -545,6 +545,46 @@
             transform: scale(1.2);
             filter: drop-shadow(0 0 4px #ef4444);
         }
+
+        /* Tables styling */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin: 16px 0;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13.5px;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(139, 92, 246, 0.12);
+            color: var(--accent-primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.05em;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
     </style>
 </head>
 <body>
@@ -566,9 +606,9 @@
         <!-- Header -->
         <header class="chat-header">
             <div class="header-left">
-                <div class="welcome-avatar" style="width: 40px; height: 40px; border-radius: 12px; font-size: 18px; margin-bottom: 0; animation: none;">GN</div>
+                <div class="welcome-avatar" style="width: 40px; height: 40px; border-radius: 12px; font-size: 15px; margin-bottom: 0; animation: none;">QEC</div>
                 <div class="header-title-container">
-                    <h1>Onboarding Assistant</h1>
+                    <h1>QE_Consumer Team</h1>
                     <div class="status-container">
                         <div class="status-dot"></div>
                         <span class="status-text">Active on AgentBase</span>
@@ -584,9 +624,9 @@
         <!-- Message List -->
         <main class="messages-area" id="messages-area">
             <div class="welcome-screen" id="welcome-screen">
-                <div class="welcome-avatar">GN</div>
+                <div class="welcome-avatar">QEC</div>
                 <h2>Chào mừng bạn gia nhập team!</h2>
-                <p>Xin chào! Tôi là Trợ lý Onboarding của đội ngũ QE Team PCT tại Zalopay. Mình có bộ nhớ dài hạn để đồng hành cùng bạn trong suốt quá trình hòa nhập. Hỏi mình bất cứ câu hỏi nào về quy trình hoặc công cụ nhé!</p>
+                <p>Xin chào! Tôi là Trợ lý Onboarding của đội ngũ QE_Consumer Team tại Zalopay. Mình có bộ nhớ dài hạn để đồng hành cùng bạn trong suốt quá trình hòa nhập. Hỏi mình bất cứ câu hỏi nào về quy trình hoặc công cụ nhé!</p>
                 <div class="quick-actions">
                     <button class="quick-action-btn" onclick="sendQuickMessage('Quy trình làm việc (workflow) của dự án và các công cụ chính là gì?')">
                         🛠️ Hỏi quy trình & công cụ
@@ -798,6 +838,54 @@
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;");
+
+            // Format tables (Markdown to HTML table)
+            const lines = formatted.split('\n');
+            let inTable = false;
+            let tableHTML = '';
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (line.startsWith('|') && line.endsWith('|')) {
+                    // Check if it is a separator line (like |---|---| or | :--- | ---: |)
+                    if (line.match(/^\|[|\-:\s]+\|$/)) {
+                        lines[i] = ''; // skip separator line
+                        continue;
+                    }
+                    
+                    let cells = line.substring(1, line.length - 1).split('|');
+                    let rowHTML = '<tr>';
+                    for (let c = 0; c < cells.length; c++) {
+                        let cellContent = cells[c].trim();
+                        if (!inTable) {
+                            rowHTML += '<th>' + cellContent + '</th>';
+                        } else {
+                            rowHTML += '<td>' + cellContent + '</td>';
+                        }
+                    }
+                    rowHTML += '</tr>';
+                    
+                    if (!inTable) {
+                        tableHTML = '<div class="table-container"><table><thead>' + rowHTML + '</thead><tbody>';
+                        inTable = true;
+                    } else {
+                        tableHTML += rowHTML;
+                    }
+                    lines[i] = '';
+                } else {
+                    if (inTable) {
+                        tableHTML += '</tbody></table></div>';
+                        inTable = false;
+                        lines[i] = tableHTML + '\n' + lines[i];
+                        tableHTML = '';
+                    }
+                }
+            }
+            if (inTable) {
+                tableHTML += '</tbody></table></div>';
+                lines[lines.length - 1] += tableHTML;
+            }
+            formatted = lines.filter(l => l !== '').join('\n');
 
             // Format code blocks
             formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
