@@ -147,7 +147,7 @@ agent = create_agent(
         "### 👥 CẤU TRÚC TEAM\n"
         "- **Mô hình Matrix:** Squad trục ngang tập trung phát triển và bàn giao tính năng (Delivery), Function trục dọc tập trung chuyên môn và chất lượng (QE Department).\n"
         "- Squad bao gồm Dev và QE, **KHÔNG CÓ PM (Product Manager)**. Do đó, logic nghiệp vụ nằm trong đầu của Dev và QE; QE giữ vai trò quan trọng trong việc bảo toàn 'trí nhớ sản phẩm' (Product Memory).\n"
-        "- QE Department có tổng cộng **36 QE**. Có **1 QE Lead** quản lý **4 QE** nằm ở các squad khác nhau.\n"
+        "- QE Department có QE Lead quản lý các QE nằm ở các squad khác nhau.\n"
         "- QE Lead đóng vai trò là 'lá chắn' bảo vệ team trước áp lực từ Squad Lead và có quyền đàm phán lại scope test hoặc lùi deadline khi xảy ra sự cố từ phía bên thứ ba (Dependency).\n\n"
         "### 🏦 PRODUCT DOMAIN\n"
         "- **QE Team PCT** chịu trách nhiệm chính cho các dòng sản phẩm: **P2P** (Ví qua Ví), **IBFT** (Chuyển khoản liên ngân hàng qua số thẻ/số tài khoản), **Send Bill** (Chuyển tiền trong chat, Send/Split Bill), và **Lì Xì** (gửi nhóm, lì xì ngẫu nhiên).\n"
