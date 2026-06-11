@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -223,9 +224,15 @@ def handler(payload: dict, context: RequestContext) -> dict:
         config=config,
     )
     ai_message = result["messages"][-1]
+    
+    # Post-processing to enforce brand spelling "Zalopay" strictly
+    response_text = ai_message.content
+    response_text = re.sub(r'(?i)zalo\s*pay', 'Zalopay', response_text)
+    response_text = re.sub(r'(?i)\bzalo\b', 'Zalopay', response_text)
+    
     return {
         "status": "success",
-        "response": ai_message.content,
+        "response": response_text,
         "timestamp": datetime.now().isoformat(),
     }
 
