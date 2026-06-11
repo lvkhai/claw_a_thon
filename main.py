@@ -103,13 +103,23 @@ def remember(fact: str) -> str:
 
 @tool
 def recall(query: str) -> str:
-    """Search long-term memory ONLY when the user asks about custom instructions, 
-    personal facts, or rules they explicitly told you to remember. 
-    DO NOT call this tool for general questions about team structure, product domains, 
-    or standard workflows, as these are already in your system prompt.
+    """Search long-term memory for detailed information about the QE team at Zalopay.
+
+    ALWAYS call this tool when the user asks about:
+    - P2P / Ví qua Ví product details, flows, or test cases
+    - IBFT / chuyển khoản liên ngân hàng details
+    - Testing strategy, test levels, test types, or test pyramid at Zalopay
+    - Specific tools: Jira, Confluence, TestLink, Postman, Jenkins, K6, JMeter, etc.
+    - Bug taxonomy, bug report formats, test environments (Sandbox/Staging/Production)
+    - Onboarding documentation content from Confluence pages
+    - Any detailed technical information that may have been stored from documentation
+
+    Also call this for:
+    - Custom instructions or rules the user told you to remember
+    - Personal facts or preferences about the current user
 
     Args:
-        query: Natural language search query.
+        query: Natural language search query describing what you need to find.
     """
     namespace = _build_namespace(_get_actor_id())
     results = memory_client.search_memory_records(
