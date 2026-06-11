@@ -11,6 +11,8 @@ from greennode_agentbase import (
     RequestContext,
     PingStatus,
 )
+from starlette.responses import HTMLResponse
+
 from greennode_agentbase.memory import MemoryClient
 from greennode_agentbase.memory.models import MemoryRecordSearchRequest, MemoryRecordInsertDirectlyRequest
 from greennode_agent_bridge import AgentBaseMemoryEvents
@@ -183,6 +185,18 @@ def handler(payload: dict, context: RequestContext) -> dict:
 def health_check() -> PingStatus:
     """Custom health check for GET /health endpoint."""
     return PingStatus.HEALTHY
+
+
+async def serve_index(request):
+    try:
+        html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
+        with open(html_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(html_content)
+    except Exception as e:
+        return HTMLResponse(f"<html><body><h1>Error loading UI: {str(e)}</h1></body></html>", status_code=500)
+
+app.add_route("/", serve_index, methods=["GET"])
 
 
 if __name__ == "__main__":

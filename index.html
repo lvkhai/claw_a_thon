@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenNode Team Onboarding Assistant</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #6366f1;
+            --btn-gradient: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --msg-user: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            --msg-bot: rgba(31, 41, 55, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* Ambient glow in background */
+        .glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0) 70%);
+            border-radius: 50%;
+            top: 10%;
+            left: 20%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(40px);
+        }
+
+        .glow-2 {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(99, 102, 241, 0) 70%);
+            border-radius: 50%;
+            bottom: 10%;
+            right: 15%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(40px);
+        }
+
+        /* Chat Container */
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 85vh;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-column: row;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 15, 26, 0.4);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar-glow {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: var(--btn-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 20px;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+            animation: pulse 2s infinite alternate;
+        }
+
+        .header-title-container h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            background: linear-gradient(90deg, #f3f4f6, #c7d2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #f3f4f6;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        /* Message Area */
+        .messages-area {
+            flex: 1;
+            padding: 28px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar */
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .messages-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .messages-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Message Bubbles */
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        .message-row.bot {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 14px 20px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.5;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            word-wrap: break-word;
+        }
+
+        .message-row.user .message-bubble {
+            background: var(--msg-user);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .message-row.bot .message-bubble {
+            background: var(--msg-bot);
+            color: var(--text-main);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Typo formatting in markdown */
+        .message-bubble p {
+            margin-bottom: 8px;
+        }
+        .message-bubble p:last-child {
+            margin-bottom: 0;
+        }
+        .message-bubble ul, .message-bubble ol {
+            margin-left: 20px;
+            margin-bottom: 8px;
+        }
+        .message-bubble li {
+            margin-bottom: 4px;
+        }
+        .message-bubble code {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* Loading Dots Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 10px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-muted);
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-indicator span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        /* Input Bar */
+        .input-bar {
+            padding: 24px 28px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(10, 15, 26, 0.4);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .chat-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 20px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-input:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.15), 
+                        inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-input::placeholder {
+            color: rgba(156, 163, 175, 0.5);
+        }
+
+        .send-btn {
+            background: var(--btn-gradient);
+            border: none;
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .send-btn:active {
+            transform: translateY(1px);
+        }
+
+        .send-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            transition: transform 0.2s ease;
+        }
+
+        .send-btn:hover svg {
+            transform: translateX(2px) translateY(-1px);
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .welcome-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
+            background: var(--btn-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 36px;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.5);
+            margin-bottom: 24px;
+            animation: float 4s infinite ease-in-out;
+        }
+
+        .welcome-screen h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, #fff, #c7d2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-screen p {
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); }
+            to { box-shadow: 0 0 25px rgba(139, 92, 246, 0.5); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            body {
+                padding: 0;
+            }
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+                border: none;
+            }
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            .message-bubble {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow"></div>
+    <div class="glow-2"></div>
+
+    <div class="chat-container">
+        <!-- Header -->
+        <header class="chat-header">
+            <div class="header-left">
+                <div class="welcome-avatar" style="width: 40px; height: 40px; border-radius: 12px; font-size: 18px; margin-bottom: 0; animation: none;">GN</div>
+                <div class="header-title-container">
+                    <h1>Onboarding Assistant</h1>
+                    <div class="status-container">
+                        <div class="status-dot"></div>
+                        <span class="status-text">Active on AgentBase</span>
+                    </div>
+                </div>
+            </div>
+            <button class="reset-btn" id="reset-session-btn" title="Xóa lịch sử chat và reset phiên">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Reset Session
+            </button>
+        </header>
+
+        <!-- Message List -->
+        <main class="messages-area" id="messages-area">
+            <div class="welcome-screen" id="welcome-screen">
+                <div class="welcome-avatar">GN</div>
+                <h2>Chào mừng bạn gia nhập team!</h2>
+                <p>Mình là Trợ lý Onboarding. Mình có bộ nhớ dài hạn để đồng hành cùng bạn trong suốt quá trình hòa nhập. Hỏi mình bất cứ câu hỏi nào về quy trình, công cụ, hoặc giới thiệu bản thân nhé!</p>
+                <div class="quick-actions">
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Xin chào! Tôi là thành viên mới tên Nam, bắt đầu làm việc từ hôm nay với vai trò Frontend Engineer.')">
+                        👋 Giới thiệu bản thân
+                    </button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Quy trình làm việc (workflow) của dự án và các công cụ chính là gì?')">
+                        🛠️ Hỏi quy trình & công cụ
+                    </button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Những việc cần hoàn thành trong tuần đầu tiên onboard?')">
+                        📅 Check-list tuần đầu
+                    </button>
+                    <button class="quick-action-btn" onclick="sendQuickMessage('Làm sao tôi có thể nhớ các thông tin quan trọng?')">
+                        🧠 Hỏi cách lưu bộ nhớ
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Input Section -->
+        <footer class="input-bar">
+            <div class="input-wrapper">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Nhập tin nhắn..." autocomplete="off">
+            </div>
+            <button class="send-btn" id="send-btn">
+                Gửi
+                <svg viewBox="0 0 24 24">
+                    <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+                </svg>
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        const messagesArea = document.getElementById('messages-area');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const resetBtn = document.getElementById('reset-session-btn');
+        const welcomeScreen = document.getElementById('welcome-screen');
+
+        // Retrieve or generate persistent User ID and Session ID
+        let userId = localStorage.getItem('agentbase_user_id');
+        if (!userId) {
+            userId = 'user_' + Math.random().toString(36).substring(2, 11);
+            localStorage.setItem('agentbase_user_id', userId);
+        }
+
+        let sessionId = localStorage.getItem('agentbase_session_id');
+        if (!sessionId) {
+            sessionId = 'session_' + Math.random().toString(36).substring(2, 11);
+            localStorage.setItem('agentbase_session_id', sessionId);
+        }
+
+        // Add message to chat list
+        function appendMessage(sender, text) {
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'none';
+            }
+
+            const row = document.createElement('div');
+            row.classList.add('message-row', sender);
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble');
+            
+            // Format text (simple markdown bold & list items)
+            bubble.innerHTML = formatText(text);
+
+            row.appendChild(bubble);
+            messagesArea.appendChild(row);
+            
+            // Scroll to bottom
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        // Simple text formatter for basic Markdown support
+        function formatText(text) {
+            // Escape html to prevent XSS
+            let formatted = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // Format code blocks
+            formatted = formatted.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            
+            // Format inline code
+            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Format bold text
+            formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+            // Format bullet points
+            if (formatted.includes('\n- ') || formatted.includes('\n* ')) {
+                const lines = formatted.split('\n');
+                let inList = false;
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].startsWith('- ') || lines[i].startsWith('* ')) {
+                        let itemContent = lines[i].substring(2);
+                        if (!inList) {
+                            lines[i] = '<ul><li>' + itemContent + '</li>';
+                            inList = true;
+                        } else {
+                            lines[i] = '<li>' + itemContent + '</li>';
+                        }
+                    } else {
+                        if (inList) {
+                            lines[i] = '</ul>' + lines[i];
+                            inList = false;
+                        }
+                    }
+                }
+                if (inList) {
+                    lines[lines.length - 1] += '</ul>';
+                }
+                formatted = lines.join('\n');
+            }
+
+            // Replace linebreaks with <br>
+            formatted = formatted.replace(/\n/g, '<br>');
+
+            return formatted;
+        }
+
+        // Show typing indicator
+        let typingIndicatorRow = null;
+        function showTypingIndicator() {
+            if (typingIndicatorRow) return;
+
+            typingIndicatorRow = document.createElement('div');
+            typingIndicatorRow.classList.add('message-row', 'bot');
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble');
+            
+            const indicator = document.createElement('div');
+            indicator.classList.add('typing-indicator');
+            indicator.innerHTML = '<span></span><span></span><span></span>';
+            
+            bubble.appendChild(indicator);
+            typingIndicatorRow.appendChild(bubble);
+            messagesArea.appendChild(typingIndicatorRow);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        // Remove typing indicator
+        function removeTypingIndicator() {
+            if (typingIndicatorRow) {
+                messagesArea.removeChild(typingIndicatorRow);
+                typingIndicatorRow = null;
+            }
+        }
+
+        // Send message API Call
+        async function sendMessage(text) {
+            if (!text.trim()) return;
+
+            appendMessage('user', text);
+            chatInput.value = '';
+            showTypingIndicator();
+
+            try {
+                const response = await fetch('/invocations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-GreenNode-AgentBase-User-Id': userId,
+                        'X-GreenNode-AgentBase-Session-Id': sessionId
+                    },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const data = await response.json();
+                removeTypingIndicator();
+
+                if (data.status === 'success') {
+                    appendMessage('bot', data.response);
+                } else {
+                    appendMessage('bot', '❌ Lỗi hệ thống: ' + (data.error || 'Không thể liên lạc với Agent.'));
+                }
+            } catch (err) {
+                removeTypingIndicator();
+                appendMessage('bot', '❌ Lỗi kết nối: Không thể gửi tin nhắn lên server AgentBase.');
+                console.error(err);
+            }
+        }
+
+        // Trigger quick messages
+        function sendQuickMessage(text) {
+            sendMessage(text);
+        }
+
+        // Event listeners
+        sendBtn.addEventListener('click', () => {
+            sendMessage(chatInput.value);
+        });
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage(chatInput.value);
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch sử chat và bắt đầu một phiên làm việc mới?')) {
+                sessionId = 'session_' + Math.random().toString(36).substring(2, 11);
+                localStorage.setItem('agentbase_session_id', sessionId);
+                
+                // Clear UI
+                const rows = messagesArea.querySelectorAll('.message-row');
+                rows.forEach(row => messagesArea.removeChild(row));
+                
+                if (welcomeScreen) {
+                    welcomeScreen.style.display = 'flex';
+                }
+                
+                alert('Đã làm mới phiên trò chuyện!');
+            }
+        });
+    </script>
+</body>
+</html>
