@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GreenNode Team Onboarding Assistant</title>
+    <!-- Canvas Confetti for celebrations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -410,7 +412,7 @@
 
         .quick-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             width: 100%;
         }
@@ -584,11 +586,8 @@
             <div class="welcome-screen" id="welcome-screen">
                 <div class="welcome-avatar">GN</div>
                 <h2>Chào mừng bạn gia nhập team!</h2>
-                <p>Xin chào! Tôi là Trợ lý Onboarding của đội ngũ QE Team PCT tại Zalopay. Mình có bộ nhớ dài hạn để đồng hành cùng bạn trong suốt quá trình hòa nhập. Hỏi mình bất cứ câu hỏi nào về quy trình, công cụ, hoặc giới thiệu bản thân nhé!</p>
+                <p>Xin chào! Tôi là Trợ lý Onboarding của đội ngũ QE Team PCT tại Zalopay. Mình có bộ nhớ dài hạn để đồng hành cùng bạn trong suốt quá trình hòa nhập. Hỏi mình bất cứ câu hỏi nào về quy trình hoặc công cụ nhé!</p>
                 <div class="quick-actions">
-                    <button class="quick-action-btn" onclick="sendQuickMessage('Xin chào! Tôi là thành viên mới tên Nam, bắt đầu làm việc từ hôm nay với vai trò Frontend Engineer.')">
-                        👋 Giới thiệu bản thân
-                    </button>
                     <button class="quick-action-btn" onclick="sendQuickMessage('Quy trình làm việc (workflow) của dự án và các công cụ chính là gì?')">
                         🛠️ Hỏi quy trình & công cụ
                     </button>
@@ -623,9 +622,52 @@
         const unlockBtn = document.getElementById('unlock-btn');
         const authError = document.getElementById('auth-error');
 
+        // Trigger celebration fireworks animation
+        function triggerCelebration() {
+            if (typeof confetti === 'function') {
+                // Initial center burst
+                confetti({
+                    particleCount: 100,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#8b5cf6', '#6366f1', '#10b981', '#a78bfa', '#818cf8']
+                });
+
+                // Side fireworks simulation
+                const duration = 2.5 * 1000;
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 25, spread: 360, ticks: 50, zIndex: 9999 };
+
+                function randomInRange(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
+
+                const interval = setInterval(function() {
+                    const timeLeft = animationEnd - Date.now();
+
+                    if (timeLeft <= 0) {
+                        return clearInterval(interval);
+                    }
+
+                    const particleCount = 30 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { 
+                        particleCount, 
+                        origin: { x: randomInRange(0.15, 0.35), y: randomInRange(0.2, 0.4) },
+                        colors: ['#8b5cf6', '#6366f1', '#10b981']
+                    }));
+                    confetti(Object.assign({}, defaults, { 
+                        particleCount, 
+                        origin: { x: randomInRange(0.65, 0.85), y: randomInRange(0.2, 0.4) },
+                        colors: ['#8b5cf6', '#6366f1', '#10b981']
+                    }));
+                }, 200);
+            }
+        }
+
         function checkAuth() {
             if (sessionStorage.getItem('zlp_auth') === 'true') {
                 loginOverlay.style.display = 'none';
+                setTimeout(triggerCelebration, 500);
             } else {
                 loginOverlay.style.display = 'flex';
             }
@@ -635,6 +677,7 @@
             if (passwordInput.value === 'pqe_pct') {
                 sessionStorage.setItem('zlp_auth', 'true');
                 loginOverlay.style.display = 'none';
+                setTimeout(triggerCelebration, 300);
             } else {
                 authError.textContent = '❌ Mật khẩu không chính xác!';
                 passwordInput.value = '';
@@ -890,6 +933,7 @@
                 }
                 
                 alert('Đã làm mới phiên trò chuyện!');
+                setTimeout(triggerCelebration, 200);
             }
         });
     </script>

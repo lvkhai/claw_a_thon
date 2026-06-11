@@ -24,6 +24,10 @@ load_dotenv()
 
 app = GreenNodeAgentBaseApp()
 
+FEEDBACK_LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "feedback_logs.jsonl")
+CHAT_LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat_logs.jsonl")
+
+
 # --- Memory Configuration ---
 # Create a memory with: /agentbase-memory
 # Set the memory ID here or via MEMORY_ID env var
@@ -188,6 +192,20 @@ def handler(payload: dict, context: RequestContext) -> dict:
     response_text = re.sub(r'(?i)zalo\s*pay', 'Zalopay', response_text)
     response_text = re.sub(r'(?i)\bzalo\b', 'Zalopay', response_text)
     
+    # Log the full question and response
+    try:
+        chat_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "user_id": context.user_id,
+            "session_id": context.session_id,
+            "user_message": message,
+            "bot_response": response_text
+        }
+        with open(CHAT_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(chat_entry, ensure_ascii=False) + "\n")
+    except Exception as log_err:
+        print("Logging error:", log_err)
+
     return {
         "status": "success",
         "response": response_text,
@@ -209,9 +227,6 @@ async def serve_index(request):
         return HTMLResponse(html_content)
     except Exception as e:
         return HTMLResponse(f"<html><body><h1>Error loading UI: {str(e)}</h1></body></html>", status_code=500)
-
-FEEDBACK_LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "feedback_logs.jsonl")
-
 async def submit_feedback(request):
     try:
         data = await request.json()
