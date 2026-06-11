@@ -473,11 +473,50 @@
                 max-width: 85%;
             }
         }
+
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gradient);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.4s ease-out;
+        }
     </style>
 </head>
 <body>
     <div class="glow"></div>
     <div class="glow-2"></div>
+
+    <div id="login-overlay">
+        <div class="login-card">
+            <div class="welcome-avatar" style="margin: 0 auto 20px auto;">🔑</div>
+            <h2 style="font-family: 'Outfit', sans-serif; font-size: 22px; margin-bottom: 12px; background: linear-gradient(90deg, #fff, #c7d2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Xác thực Quyền truy cập</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Vui lòng nhập mật khẩu dự án để tiếp tục tương tác với Onboarding Assistant.</p>
+            <input type="password" id="password-input" class="chat-input" placeholder="Nhập mật khẩu..." style="margin-bottom: 16px; text-align: center;">
+            <div id="auth-error" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; font-weight: 500;"></div>
+            <button id="unlock-btn" class="send-btn" style="width: 100%;">Mở khóa</button>
+        </div>
+    </div>
 
     <div class="chat-container">
         <!-- Header -->
@@ -536,6 +575,38 @@
     </div>
 
     <script>
+        // Authentication Logic
+        const loginOverlay = document.getElementById('login-overlay');
+        const passwordInput = document.getElementById('password-input');
+        const unlockBtn = document.getElementById('unlock-btn');
+        const authError = document.getElementById('auth-error');
+
+        function checkAuth() {
+            if (sessionStorage.getItem('zlp_auth') === 'true') {
+                loginOverlay.style.display = 'none';
+            } else {
+                loginOverlay.style.display = 'flex';
+            }
+        }
+
+        function performAuth() {
+            if (passwordInput.value === 'pqe_pct') {
+                sessionStorage.setItem('zlp_auth', 'true');
+                loginOverlay.style.display = 'none';
+            } else {
+                authError.textContent = '❌ Mật khẩu không chính xác!';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        unlockBtn.addEventListener('click', performAuth);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performAuth();
+        });
+
+        checkAuth();
+
         const messagesArea = document.getElementById('messages-area');
         const chatInput = document.getElementById('chat-input');
         const sendBtn = document.getElementById('send-btn');
