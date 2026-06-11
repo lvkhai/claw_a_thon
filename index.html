@@ -501,6 +501,48 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             animation: fadeIn 0.4s ease-out;
         }
+
+        .feedback-container {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 6px;
+        }
+
+        .feedback-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0.5;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+
+        .feedback-btn:hover {
+            opacity: 1;
+            transform: scale(1.15);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .feedback-btn.active-like {
+            opacity: 1;
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 4px #10b981);
+        }
+
+        .feedback-btn.active-dislike {
+            opacity: 1;
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 4px #ef4444);
+        }
     </style>
 </head>
 <body>
@@ -542,7 +584,7 @@
             <div class="welcome-screen" id="welcome-screen">
                 <div class="welcome-avatar">GN</div>
                 <h2>Chào mừng bạn gia nhập team!</h2>
-                <p>Mình là Trợ lý Onboarding. Mình có bộ nhớ dài hạn để đồng hành cùng bạn trong suốt quá trình hòa nhập. Hỏi mình bất cứ câu hỏi nào về quy trình, công cụ, hoặc giới thiệu bản thân nhé!</p>
+                <p>Xin chào! Tôi là Trợ lý Onboarding của đội ngũ QE Team PCT tại Zalopay. Mình có bộ nhớ dài hạn để đồng hành cùng bạn trong suốt quá trình hòa nhập. Hỏi mình bất cứ câu hỏi nào về quy trình, công cụ, hoặc giới thiệu bản thân nhé!</p>
                 <div class="quick-actions">
                     <button class="quick-action-btn" onclick="sendQuickMessage('Xin chào! Tôi là thành viên mới tên Nam, bắt đầu làm việc từ hôm nay với vai trò Frontend Engineer.')">
                         👋 Giới thiệu bản thân
@@ -627,7 +669,7 @@
         }
 
         // Add message to chat list
-        function appendMessage(sender, text) {
+        function appendMessage(sender, text, userMsgText = '') {
             if (welcomeScreen) {
                 welcomeScreen.style.display = 'none';
             }
@@ -640,6 +682,64 @@
             
             // Format text (simple markdown bold & list items)
             bubble.innerHTML = formatText(text);
+
+            // Add feedback buttons for bot messages
+            if (sender === 'bot') {
+                const feedbackContainer = document.createElement('div');
+                feedbackContainer.className = 'feedback-container';
+
+                const likeBtn = document.createElement('button');
+                likeBtn.className = 'feedback-btn';
+                likeBtn.innerHTML = '👍';
+                likeBtn.title = 'Hữu ích';
+
+                const dislikeBtn = document.createElement('button');
+                dislikeBtn.className = 'feedback-btn';
+                dislikeBtn.innerHTML = '👎';
+                dislikeBtn.title = 'Chưa hữu ích';
+
+                let rated = false;
+                const submitRating = async (rating) => {
+                    if (rated) return;
+                    rated = true;
+
+                    likeBtn.disabled = true;
+                    dislikeBtn.disabled = true;
+
+                    if (rating === 'like') {
+                        likeBtn.classList.add('active-like');
+                        dislikeBtn.style.opacity = '0.1';
+                    } else {
+                        dislikeBtn.classList.add('active-dislike');
+                        likeBtn.style.opacity = '0.1';
+                    }
+
+                    try {
+                        await fetch('/feedback', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-GreenNode-AgentBase-User-Id': userId,
+                                'X-GreenNode-AgentBase-Session-Id': sessionId
+                            },
+                            body: JSON.stringify({
+                                user_message: userMsgText,
+                                bot_response: text,
+                                rating: rating
+                            })
+                        });
+                    } catch (err) {
+                        console.error('Error submitting feedback:', err);
+                    }
+                };
+
+                likeBtn.addEventListener('click', () => submitRating('like'));
+                dislikeBtn.addEventListener('click', () => submitRating('dislike'));
+
+                feedbackContainer.appendChild(likeBtn);
+                feedbackContainer.appendChild(dislikeBtn);
+                bubble.appendChild(feedbackContainer);
+            }
 
             row.appendChild(bubble);
             messagesArea.appendChild(row);
@@ -749,13 +849,13 @@
                 removeTypingIndicator();
 
                 if (data.status === 'success') {
-                    appendMessage('bot', data.response);
+                    appendMessage('bot', data.response, text);
                 } else {
-                    appendMessage('bot', '❌ Lỗi hệ thống: ' + (data.error || 'Không thể liên lạc với Agent.'));
+                    appendMessage('bot', '❌ Lỗi hệ thống: ' + (data.error || 'Không thể liên lạc với Agent.'), text);
                 }
             } catch (err) {
                 removeTypingIndicator();
-                appendMessage('bot', '❌ Lỗi kết nối: Không thể gửi tin nhắn lên server AgentBase.');
+                appendMessage('bot', '❌ Lỗi kết nối: Không thể gửi tin nhắn lên server AgentBase.', text);
                 console.error(err);
             }
         }

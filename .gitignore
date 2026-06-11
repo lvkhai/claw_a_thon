@@ -14,3 +14,4 @@ greennode-agentbase-skills/
 .claude/
 .cursor/
 scratch/
+feedback_logs.jsonl
