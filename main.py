@@ -99,7 +99,10 @@ def remember(fact: str) -> str:
 
 @tool
 def recall(query: str) -> str:
-    """Search long-term memory for facts relevant to a query.
+    """Search long-term memory ONLY when the user asks about custom instructions, 
+    personal facts, or rules they explicitly told you to remember. 
+    DO NOT call this tool for general questions about team structure, product domains, 
+    or standard workflows, as these are already in your system prompt.
 
     Args:
         query: Natural language search query.
