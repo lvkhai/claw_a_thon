@@ -15,3 +15,4 @@ greennode-agentbase-skills/
 .cursor/
 scratch/
 feedback_logs.jsonl
+system_prompt.txt
