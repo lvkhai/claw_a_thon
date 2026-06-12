@@ -1,5 +1,6 @@
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -65,6 +66,7 @@ llm = ChatOpenAI(
     model=LLM_MODEL,
     base_url=LLM_BASE_URL,
     api_key=LLM_API_KEY,
+    temperature=0.0,
 )
 
 
@@ -78,6 +80,11 @@ def _get_actor_id() -> str:
     """Get actor_id from LangGraph configurable (set during graph.invoke)."""
     config = get_config()
     return config["configurable"].get("actor_id", "default")
+
+
+# Shared namespace for team-wide knowledge (IBFT guides, testing docs, etc.)
+# Insert here to make knowledge available to ALL users without redeployment.
+SHARED_ACTOR_ID = "default"
 
 
 def _build_namespace(actor_id: str) -> str:
@@ -121,26 +128,50 @@ def recall(query: str) -> str:
     Args:
         query: Natural language search query describing what you need to find.
     """
-    namespace = _build_namespace(_get_actor_id())
-    results = memory_client.search_memory_records(
-        id=MEMORY_ID,
-        namespace=namespace,
-        request=MemoryRecordSearchRequest(query=query, limit=10),
-    )
-    if not results:
-        return "No relevant memories found."
-    
-    memories = []
-    for r in results:
+    actor_id = _get_actor_id()
+    user_namespace = _build_namespace(actor_id)
+    shared_namespace = _build_namespace(SHARED_ACTOR_ID)
+
+    def _search(namespace: str) -> list:
+        try:
+            results = memory_client.search_memory_records(
+                id=MEMORY_ID,
+                namespace=namespace,
+                request=MemoryRecordSearchRequest(query=query, limit=5),
+            )
+            return results or []
+        except Exception:
+            return []
+
+    def _extract(r) -> tuple[str, float]:
         if isinstance(r, dict):
-            memory = r.get("memory", "")
-            score = r.get("score", 0.0)
-        else:
-            memory = getattr(r, "memory", "")
-            score = getattr(r, "score", 0.0)
-        memories.append(f"- {memory} (score: {score:.2f})")
-    
-    return "\n".join(memories)
+            return r.get("memory", ""), r.get("score", 0.0)
+        return getattr(r, "memory", ""), getattr(r, "score", 0.0)
+
+    # Run both namespace searches concurrently to minimize latency
+    namespaces = {"shared": shared_namespace}
+    if actor_id != SHARED_ACTOR_ID:
+        namespaces["user"] = user_namespace
+
+    all_results: list = []
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = {executor.submit(_search, ns): ns for ns in namespaces.values()}
+        for future in as_completed(futures):
+            all_results.extend(future.result())
+
+    # Merge and deduplicate by memory content, keeping highest score per entry
+    seen: dict[str, float] = {}
+    for r in all_results:
+        memory, score = _extract(r)
+        if memory and (memory not in seen or score > seen[memory]):
+            seen[memory] = score
+
+    if not seen:
+        return "No relevant memories found."
+
+    # Sort by score descending, cap at 10 results total
+    ranked = sorted(seen.items(), key=lambda x: x[1], reverse=True)[:10]
+    return "\n".join(f"- {mem}" for mem, score in ranked)
 
 
 # --- Create Agent with Checkpointer ---
@@ -165,62 +196,85 @@ agent = create_agent(
 
 
 @app.entrypoint
-def handler(payload: dict, context: RequestContext) -> dict:
+def handler(payload: dict, context: RequestContext):
     """Main agent entrypoint with LangChain + Memory support.
 
     Args:
         payload: JSON body with "message"
         context: Request metadata (session_id, user_id, request_headers)
     """
-    # Short-term memory (checkpointer) requires both user_id and session_id
-    # to correctly persist and isolate conversation state per user per session.
-    if not context.user_id or not context.session_id:
-        return {
-            "status": "error",
-            "error": "Missing required headers: X-GreenNode-AgentBase-User-Id and X-GreenNode-AgentBase-Session-Id are required when using memory.",
+    async def stream_generator():
+        # Short-term memory (checkpointer) requires both user_id and session_id
+        # to correctly persist and isolate conversation state per user per session.
+        if not context.user_id or not context.session_id:
+            yield {
+                "status": "error",
+                "error": "Missing required headers: X-GreenNode-AgentBase-User-Id and X-GreenNode-AgentBase-Session-Id are required when using memory.",
+            }
+            return
+
+        message = payload.get("message", "Hello")
+
+        # Map AgentBase context to LangGraph config
+        # thread_id -> session persistence, actor_id -> per-user memory
+        config = {
+            "configurable": {
+                "thread_id": context.session_id,
+                "actor_id": context.user_id,
+            }
         }
 
-    message = payload.get("message", "Hello")
+        accumulated_text = ""
+        sent_length = 0
 
-    # Map AgentBase context to LangGraph config
-    # thread_id -> session persistence, actor_id -> per-user memory
-    config = {
-        "configurable": {
-            "thread_id": context.session_id,
-            "actor_id": context.user_id,
-        }
-    }
+        try:
+            async for chunk, metadata in agent.astream(
+                {"messages": [{"role": "user", "content": message}]},
+                config=config,
+                stream_mode="messages"
+            ):
+                content = getattr(chunk, 'content', '')
+                if content:
+                    accumulated_text += content
+                    
+                    # Post-processing to enforce brand spelling "Zalopay" strictly
+                    corrected_text = re.sub(r'(?i)zalo\s*pay', 'Zalopay', accumulated_text)
+                    corrected_text = re.sub(r'(?i)\bzalo\b', 'Zalopay', corrected_text)
+                    
+                    if len(corrected_text) > sent_length:
+                        delta = corrected_text[sent_length:]
+                        sent_length = len(corrected_text)
+                        yield {
+                            "status": "success",
+                            "response": delta,
+                            "timestamp": datetime.now().isoformat(),
+                        }
+        except Exception as e:
+            yield {
+                "status": "error",
+                "error": f"Lỗi trong quá trình streaming: {str(e)}",
+            }
+            return
 
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": message}]},
-        config=config,
-    )
-    ai_message = result["messages"][-1]
-    
-    # Post-processing to enforce brand spelling "Zalopay" strictly
-    response_text = ai_message.content
-    response_text = re.sub(r'(?i)zalo\s*pay', 'Zalopay', response_text)
-    response_text = re.sub(r'(?i)\bzalo\b', 'Zalopay', response_text)
-    
-    # Log the full question and response
-    try:
-        chat_entry = {
-            "timestamp": datetime.now().isoformat(),
-            "user_id": context.user_id,
-            "session_id": context.session_id,
-            "user_message": message,
-            "bot_response": response_text
-        }
-        with open(CHAT_LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(chat_entry, ensure_ascii=False) + "\n")
-    except Exception as log_err:
-        print("Logging error:", log_err)
+        # Log the full question and response
+        try:
+            final_response = re.sub(r'(?i)zalo\s*pay', 'Zalopay', accumulated_text)
+            final_response = re.sub(r'(?i)\bzalo\b', 'Zalopay', final_response)
+            
+            chat_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "user_id": context.user_id,
+                "session_id": context.session_id,
+                "user_message": message,
+                "bot_response": final_response
+            }
+            with open(CHAT_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(chat_entry, ensure_ascii=False) + "\n")
+        except Exception as log_err:
+            print("Logging error:", log_err)
 
-    return {
-        "status": "success",
-        "response": response_text,
-        "timestamp": datetime.now().isoformat(),
-    }
+    return stream_generator()
+
 
 
 @app.ping

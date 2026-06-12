@@ -585,6 +585,77 @@
         tr:hover td {
             background: rgba(255, 255, 255, 0.02);
         }
+
+        /* Message section and pagination styling */
+        .message-sections-container {
+            width: 100%;
+        }
+
+        .message-section {
+            opacity: 0;
+            margin-bottom: 16px;
+            animation: fadeInSection 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .message-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .see-more-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.08);
+            width: 100%;
+        }
+
+        .see-more-btn {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            color: #c7d2fe;
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .see-more-btn:hover {
+            background: rgba(139, 92, 246, 0.22);
+            border-color: rgba(139, 92, 246, 0.45);
+            color: #fff;
+            transform: translateY(1px);
+            box-shadow: 0 6px 15px rgba(139, 92, 246, 0.15);
+        }
+
+        .see-more-btn:active {
+            transform: translateY(2px);
+        }
+
+        .see-more-icon {
+            transition: transform 0.25s ease;
+        }
+
+        .see-more-btn:hover .see-more-icon {
+            transform: translateY(2px);
+        }
+
+        @keyframes fadeInSection {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -896,6 +967,12 @@
             // Format bold text
             formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
+            // Format markdown links: [text](url)
+            formatted = formatted.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" style="color: var(--accent-primary); text-decoration: underline; font-weight: 500;">$1</a>');
+
+            // Format remaining naked URLs (not inside HTML tags or attributes)
+            formatted = formatted.replace(/(?<!["=\/>])(https?:\/\/[^\s<]+[^.,;:\s()?!"'])/g, '<a href="$1" target="_blank" style="color: var(--accent-primary); text-decoration: underline; font-weight: 500;">$1</a>');
+
             // Format bullet points
             if (formatted.includes('\n- ') || formatted.includes('\n* ')) {
                 const lines = formatted.split('\n');
@@ -957,7 +1034,249 @@
             }
         }
 
-        // Send message API Call
+        // Split text into logical sections by headers or long paragraphs
+        function splitIntoSections(text) {
+            const normalized = text.replace(/\r\n/g, '\n');
+            
+            // Try to split by markdown headers first (h2 or h3)
+            const headerRegex = /\n(?=### |## )/g;
+            const partsByHeader = normalized.split(headerRegex);
+            
+            if (partsByHeader.length > 1) {
+                return partsByHeader.map(p => p.trim()).filter(p => p !== '');
+            }
+                // If no headers, split by double newlines, but only if text is long
+            if (normalized.length > 450) {
+                const partsByNewline = normalized.split(/\n\n+/);
+                if (partsByNewline.length > 1) {
+                    return partsByNewline.map(p => p.trim()).filter(p => p !== '');
+                }
+            }
+            
+            // Otherwise, return as a single section
+            return [normalized.trim()];
+        }
+
+        // Keep track of active bot messages by ID for streaming and pagination
+        const activeBotMessages = {};
+
+        function createEmptyBotMessage(userMsgText) {
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'none';
+            }
+
+            const messageId = 'bot_msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+            
+            let row, bubble, hasTypingIndicator = false;
+            
+            if (typingIndicatorRow) {
+                // Reuse the typing indicator row and bubble directly
+                row = typingIndicatorRow;
+                row.id = messageId;
+                bubble = row.querySelector('.message-bubble');
+                hasTypingIndicator = true;
+                typingIndicatorRow = null; // Reset typing indicator ref
+            } else {
+                row = document.createElement('div');
+                row.classList.add('message-row', 'bot');
+                row.id = messageId;
+
+                bubble = document.createElement('div');
+                bubble.classList.add('message-bubble');
+                row.appendChild(bubble);
+                messagesArea.appendChild(row);
+            }
+
+            // Container for sections
+            const sectionsContainer = document.createElement('div');
+            sectionsContainer.className = 'message-sections-container';
+            bubble.appendChild(sectionsContainer);
+
+            // See more button container
+            const seeMoreContainer = document.createElement('div');
+            seeMoreContainer.className = 'see-more-container';
+            seeMoreContainer.style.display = 'none';
+            
+            const seeMoreBtn = document.createElement('button');
+            seeMoreBtn.className = 'see-more-btn';
+            seeMoreBtn.innerHTML = 'Xem tiếp <svg class="see-more-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+            seeMoreBtn.addEventListener('click', () => handleSeeMore(messageId));
+            
+            seeMoreContainer.appendChild(seeMoreBtn);
+            bubble.appendChild(seeMoreContainer);
+
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+
+            activeBotMessages[messageId] = {
+                accumulatedText: '',
+                sections: [],
+                visibleSectionCount: 1, // Start with showing 1 section
+                isStreaming: true,
+                userMsgText: userMsgText,
+                bubbleElement: bubble,
+                sectionsContainer: sectionsContainer,
+                seeMoreContainer: seeMoreContainer,
+                hasTypingIndicator: hasTypingIndicator
+            };
+
+            return messageId;
+        }
+
+        function updateBotMessage(messageId, textChunk) {
+            const state = activeBotMessages[messageId];
+            if (!state) return;
+
+            state.accumulatedText += textChunk;
+            
+            // If the typing dots are still visible, wait for the first non-empty text
+            if (state.hasTypingIndicator) {
+                const trimmed = state.accumulatedText.trim();
+                if (trimmed.length > 0) {
+                    const indicator = state.bubbleElement.querySelector('.typing-indicator');
+                    if (indicator) {
+                        indicator.remove();
+                    }
+                    state.hasTypingIndicator = false;
+                } else {
+                    return; // Skip rendering empty space while waiting
+                }
+            }
+
+            state.sections = splitIntoSections(state.accumulatedText);
+            renderBotMessageSections(messageId);
+        }
+
+        function renderBotMessageSections(messageId) {
+            const state = activeBotMessages[messageId];
+            if (!state) return;
+
+            const container = state.sectionsContainer;
+            const limit = Math.min(state.visibleSectionCount, state.sections.length);
+
+            // Track how many section divs are already rendered to avoid
+            // destroying and recreating them on every streaming chunk
+            // (which caused flicker + repeated animations).
+            const existingDivs = container.querySelectorAll('.message-section');
+            const alreadyRendered = existingDivs.length;
+
+            // Update content of existing sections (text may grow during streaming)
+            for (let i = 0; i < Math.min(alreadyRendered, limit); i++) {
+                existingDivs[i].innerHTML = formatText(state.sections[i]);
+            }
+
+            // Append only NEW sections that aren't in the DOM yet
+            for (let i = alreadyRendered; i < limit; i++) {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'message-section';
+                // Only animate the brand-new section, not previously shown ones
+                sectionDiv.style.animation = 'fadeInSection 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                sectionDiv.innerHTML = formatText(state.sections[i]);
+                container.appendChild(sectionDiv);
+            }
+
+            // Remove excess sections if visibleSectionCount shrank (edge case)
+            for (let i = existingDivs.length - 1; i >= limit; i--) {
+                container.removeChild(existingDivs[i]);
+            }
+
+            // Only show "Xem tiếp" when streaming is done AND there are hidden sections.
+            // During streaming the button stays hidden to prevent flashing.
+            if (!state.isStreaming && state.sections.length > state.visibleSectionCount) {
+                state.seeMoreContainer.style.display = 'flex';
+            } else {
+                state.seeMoreContainer.style.display = 'none';
+            }
+
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function handleSeeMore(messageId) {
+            const state = activeBotMessages[messageId];
+            if (!state) return;
+
+            state.visibleSectionCount++;
+            renderBotMessageSections(messageId);
+        }
+
+        function finalizeBotMessage(messageId) {
+            const state = activeBotMessages[messageId];
+            if (!state) return;
+
+            state.isStreaming = false;
+            
+            // Clean up typing indicator if it was never replaced by text
+            if (state.hasTypingIndicator) {
+                const indicator = state.bubbleElement.querySelector('.typing-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+                state.hasTypingIndicator = false;
+            }
+
+            state.sections = splitIntoSections(state.accumulatedText);
+            renderBotMessageSections(messageId);
+            
+            const bubble = state.bubbleElement;
+            const text = state.accumulatedText;
+            const userMsgText = state.userMsgText;
+
+            const feedbackContainer = document.createElement('div');
+            feedbackContainer.className = 'feedback-container';
+
+            const likeBtn = document.createElement('button');
+            likeBtn.className = 'feedback-btn';
+            likeBtn.innerHTML = '👍';
+            likeBtn.title = 'Hữu ích';
+
+            const dislikeBtn = document.createElement('button');
+            dislikeBtn.className = 'feedback-btn';
+            dislikeBtn.innerHTML = '👎';
+            dislikeBtn.title = 'Chưa hữu ích';
+
+            let rated = false;
+            const submitRating = async (rating) => {
+                if (rated) return;
+                rated = true;
+
+                likeBtn.disabled = true;
+                dislikeBtn.disabled = true;
+
+                if (rating === 'like') {
+                    likeBtn.classList.add('active-like');
+                    dislikeBtn.style.opacity = '0.1';
+                } else {
+                    dislikeBtn.classList.add('active-dislike');
+                    likeBtn.style.opacity = '0.1';
+                }
+
+                try {
+                    await fetch('/feedback', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-GreenNode-AgentBase-User-Id': userId,
+                            'X-GreenNode-AgentBase-Session-Id': sessionId
+                        },
+                        body: JSON.stringify({
+                            user_message: userMsgText,
+                            bot_response: text,
+                            rating: rating
+                        })
+                    });
+                } catch (err) {
+                    console.error('Error submitting feedback:', err);
+                }
+            };
+
+            likeBtn.addEventListener('click', () => submitRating('like'));
+            dislikeBtn.addEventListener('click', () => submitRating('dislike'));
+
+            feedbackContainer.appendChild(likeBtn);
+            feedbackContainer.appendChild(dislikeBtn);
+            bubble.appendChild(feedbackContainer);
+        }
+
+        // Send message API Call with SSE streaming
         async function sendMessage(text) {
             if (!text.trim()) return;
 
@@ -976,13 +1295,62 @@
                     body: JSON.stringify({ message: text })
                 });
 
-                const data = await response.json();
-                removeTypingIndicator();
+                if (!response.ok) {
+                    removeTypingIndicator(); // Remove indicator on error
+                    const errorText = await response.text();
+                    let errMsg = 'Không thể liên lạc với Agent.';
+                    try {
+                        const errJson = JSON.parse(errorText);
+                        errMsg = errJson.error || errMsg;
+                    } catch(e) {}
+                    appendMessage('bot', '❌ Lỗi hệ thống: ' + errMsg, text);
+                    return;
+                }
 
-                if (data.status === 'success') {
-                    appendMessage('bot', data.response, text);
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('text/event-stream')) {
+                    const botMessageId = createEmptyBotMessage(text); // Automatically recycles typingIndicatorRow
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let buffer = '';
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (trimmed.startsWith('data: ')) {
+                                try {
+                                    const dataStr = trimmed.slice(6);
+                                    const parsed = JSON.parse(dataStr);
+                                    if (parsed.status === 'success' && parsed.response) {
+                                        updateBotMessage(botMessageId, parsed.response);
+                                    } else if (parsed.status === 'error') {
+                                        updateBotMessage(botMessageId, '❌ Lỗi: ' + parsed.error);
+                                    }
+                                } catch (e) {
+                                    console.error('Failed to parse SSE data:', e);
+                                }
+                            }
+                        }
+                    }
+                    
+                    finalizeBotMessage(botMessageId);
                 } else {
-                    appendMessage('bot', '❌ Lỗi hệ thống: ' + (data.error || 'Không thể liên lạc với Agent.'), text);
+                    // Fallback to normal JSON
+                    removeTypingIndicator(); // Remove indicator for fallback
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        appendMessage('bot', data.response, text);
+                    } else {
+                        appendMessage('bot', '❌ Lỗi hệ thống: ' + (data.error || 'Không thể liên lạc với Agent.'), text);
+                    }
                 }
             } catch (err) {
                 removeTypingIndicator();
