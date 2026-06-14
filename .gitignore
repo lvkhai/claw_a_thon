@@ -17,3 +17,4 @@ scratch/
 feedback_logs.jsonl
 chat_logs.jsonl
 system_prompt.txt
+confidential_knowledge.json

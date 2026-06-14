@@ -28,13 +28,13 @@
 ### 3. Product Domain
 - [ ] Danh sách sản phẩm (P2P, IBFT, Send Bill, Lì Xì) vẫn còn đúng
 - [ ] Danh sách dependencies (Cashier, Promotion, MMF, Lending) vẫn còn đúng
-- [ ] Platform hợp lệ (ZPA iOS, ZPA Android, ZPI, ZMP) không thay đổi
+- [ ] Platform hợp lệ (ZMP, ZPA_Android, ZPA_iOS, ZPI_Android, ZPI_iOS, Web, API) khớp với Jira
 
 ### 4. Bug Report Format
-- [ ] Template markdown vẫn khớp với format thực tế đang dùng
+- [ ] Template markdown vẫn khớp với format thực tế đang dùng (h3. Device Info, h3. Steps, h3. Actual, h3. Expected)
 
 ### 5. Testcase Rules
-- [ ] Các mock amount đặc biệt (`31000`, `131001`→`131005`, `161000`) vẫn còn đúng
+- [ ] Sử dụng Mock Server thay vì các mock amount cũ không chính xác
 - [ ] gRPC service name `MTIbftAPI` vẫn còn đúng
 
 ### 6. Links tài liệu
