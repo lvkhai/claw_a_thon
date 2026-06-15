@@ -19,3 +19,6 @@ chat_logs.jsonl
 system_prompt.txt
 confidential_knowledge.json
 training_data.json
+prompt_review_checklist.md
+internal_links.json
+internal_keywords.json

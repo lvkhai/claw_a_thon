@@ -1528,7 +1528,7 @@
                 <button class="modal-close-btn" id="modal-close-btn">✕</button>
             </div>
             <div class="modal-body">
-                <a href="https://confluence.zalopay.vn/x/L6hXD" target="_blank" class="doc-link-card">
+                <a data-link-key="p2p" href="#" target="_blank" class="doc-link-card">
                     <span class="doc-link-icon">📘</span>
                     <div class="doc-link-info">
                         <div class="doc-link-title">Tài liệu P2P (Ví qua Ví)</div>
@@ -1536,7 +1536,7 @@
                     </div>
                     <span style="color: var(--text-muted)">↗</span>
                 </a>
-                <a href="https://confluence.zalopay.vn/x/KKhXD" target="_blank" class="doc-link-card">
+                <a data-link-key="ibft" href="#" target="_blank" class="doc-link-card">
                     <span class="doc-link-icon">📘</span>
                     <div class="doc-link-info">
                         <div class="doc-link-title">Tài liệu IBFT (Chuyển khoản liên ngân hàng)</div>
@@ -1544,7 +1544,7 @@
                     </div>
                     <span style="color: var(--text-muted)">↗</span>
                 </a>
-                <a href="https://confluence.zalopay.vn/x/2TjjEg" target="_blank" class="doc-link-card">
+                <a data-link-key="e2e_system" href="#" target="_blank" class="doc-link-card">
                     <span class="doc-link-icon">📙</span>
                     <div class="doc-link-info">
                         <div class="doc-link-title">Tài liệu E2E System Overview</div>
@@ -1552,7 +1552,7 @@
                     </div>
                     <span style="color: var(--text-muted)">↗</span>
                 </a>
-                <a href="https://confluence.zalopay.vn/x/OckHBQ" target="_blank" class="doc-link-card">
+                <a data-link-key="testing_strategy" href="#" target="_blank" class="doc-link-card">
                     <span class="doc-link-icon">📕</span>
                     <div class="doc-link-info">
                         <div class="doc-link-title">Testing Strategy in Zalopay</div>
@@ -1569,7 +1569,7 @@
                     <span style="color: var(--text-muted)">↗</span>
                 </a>
                 <div style="border-top: 1px solid var(--border-color); margin: 5px 0;"></div>
-                <a href="https://jira.zalopay.vn/" target="_blank" class="doc-link-card">
+                <a data-link-key="jira" href="#" target="_blank" class="doc-link-card">
                     <span class="doc-link-icon">⚙️</span>
                     <div class="doc-link-info">
                         <div class="doc-link-title">Jira Server</div>
@@ -1577,7 +1577,7 @@
                     </div>
                     <span style="color: var(--text-muted)">↗</span>
                 </a>
-                <a href="https://testlink.zalopay.vn/" target="_blank" class="doc-link-card">
+                <a data-link-key="testlink" href="#" target="_blank" class="doc-link-card">
                     <span class="doc-link-icon">🧪</span>
                     <div class="doc-link-info">
                         <div class="doc-link-title">TestLink Client</div>
@@ -1611,14 +1611,37 @@
             }
         }
 
-        function performAuth() {
-            if (passwordInput.value === 'pqe_pct') {
-                isAuthenticated = true;
-                loginOverlay.style.display = 'none';
-            } else {
-                authError.textContent = 'Mật khẩu không chính xác. Vui lòng nhập lại.';
-                passwordInput.value = '';
-                passwordInput.focus();
+        async function performAuth() {
+            try {
+                const res = await fetch('/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: passwordInput.value })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    isAuthenticated = true;
+                    loginOverlay.style.display = 'none';
+                    return;
+                }
+            } catch (e) {
+                // network error — fall through to error message
+            }
+            authError.textContent = 'Mật khẩu không chính xác. Vui lòng nhập lại.';
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+
+        async function initLinks() {
+            try {
+                const res = await fetch('/links');
+                const links = await res.json();
+                document.querySelectorAll('[data-link-key]').forEach(el => {
+                    const url = links[el.getAttribute('data-link-key')];
+                    if (url) el.href = url;
+                });
+            } catch (e) {
+                // links remain as '#' if backend unavailable
             }
         }
 
@@ -1626,6 +1649,7 @@
         passwordInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') performAuth();
         });
+        initLinks();
 
         checkAuth();
 

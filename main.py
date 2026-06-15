@@ -163,7 +163,14 @@ def recall(query: str) -> str:
             local_results = []
             
             # Check if query matches Kafka Idempotency keywords
-            if any(k in q_lower for k in ["kafka", "idempotency", "idem", "callback", "event", "consumer", "handler", "pct-18986", "pct-21220", "pct-21221", "pct-21222"]):
+            _ticket_kws = []
+            try:
+                kw_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "internal_keywords.json")
+                with open(kw_path, "r", encoding="utf-8") as kf:
+                    _ticket_kws = json.load(kf).get("kafka_tickets", [])
+            except Exception:
+                pass
+            if any(k in q_lower for k in ["kafka", "idempotency", "idem", "callback", "event", "consumer", "handler"] + _ticket_kws):
                 ctx = conf_data.get("project_context", {})
                 local_results.append(f"**Thông tin Dự án Idempotency Kafka (Jira {ctx.get('jira_ticket')}):**")
                 local_results.append(f"- Tiêu đề: {ctx.get('title')}")
@@ -438,6 +445,28 @@ async def submit_feedback(request):
     except Exception as e:
         return JSONResponse({"status": "error", "error": str(e)}, status_code=500)
 
+async def auth_endpoint(request):
+    try:
+        data = await request.json()
+        password = data.get("password", "")
+        expected = os.environ.get("APP_PASSWORD", "")
+        if expected and password == expected:
+            return JSONResponse({"ok": True})
+        return JSONResponse({"ok": False}, status_code=401)
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+async def serve_links(request):
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "internal_links.json")
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return JSONResponse(data)
+    except Exception:
+        return JSONResponse({})
+
+app.add_route("/auth", auth_endpoint, methods=["POST"])
+app.add_route("/links", serve_links, methods=["GET"])
 app.add_route("/feedback", submit_feedback, methods=["POST"])
 app.add_route("/training-data", serve_training_data, methods=["GET"])
 app.add_route("/", serve_index, methods=["GET"])
