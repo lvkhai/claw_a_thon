@@ -2053,10 +2053,11 @@
                 feedbackContainer.appendChild(dislikeBtn);
                 bubble.appendChild(feedbackContainer);
 
-                // Move existing training action buttons to the bottom of this response
+                // Re-render training action buttons below this response so Tiep tuc stays visible
                 if (appMode === 'training') {
-                    const existingActions = document.querySelector('.quiz-actions-container');
-                    if (existingActions) bubble.appendChild(existingActions);
+                    document.querySelectorAll('.quiz-actions-container').forEach(el => el.remove());
+                    const actions = createTrainingActions();
+                    if (actions) bubble.appendChild(actions);
                 }
             }
 
@@ -2337,10 +2338,11 @@
             feedbackContainer.appendChild(dislikeBtn);
             bubble.appendChild(feedbackContainer);
 
-            // Move existing training action buttons to the bottom of this response
+            // Re-render training action buttons below this response so Tiep tuc stays visible
             if (appMode === 'training') {
-                const existingActions = document.querySelector('.quiz-actions-container');
-                if (existingActions) bubble.appendChild(existingActions);
+                document.querySelectorAll('.quiz-actions-container').forEach(el => el.remove());
+                const actions = createTrainingActions();
+                if (actions) bubble.appendChild(actions);
             }
 
             delete activeBotMessages[messageId];
