@@ -29,6 +29,30 @@ FEEDBACK_LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fe
 CHAT_LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chat_logs.jsonl")
 
 
+def clean_bot_response(text: str) -> str:
+    # 1. Enforce Zalopay spelling
+    cleaned = re.sub(r'(?i)zalo\s*pay', 'Zalopay', text)
+    cleaned = re.sub(r'(?i)\bzalo\b', 'Zalopay', cleaned)
+    
+    # 2. Remove search notification sentences (e.g. "Tôi sẽ tìm kiếm thông tin về ... trong cơ sở dữ liệu.")
+    cleaned = re.sub(r'(?i)tôi sẽ (tìm kiếm|truy xuất|tra cứu) thông tin về .*? trong (cơ sở dữ liệu|bộ nhớ|memory|database)\.?\s*', '', cleaned)
+    cleaned = re.sub(r'(?i)tôi sẽ (tìm kiếm|truy xuất|tra cứu) .*? trong (cơ sở dữ liệu|bộ nhớ|memory|database)\.?\s*', '', cleaned)
+    
+    # 3. Remove raw metadata lines starting with [[ or [ containing >
+    lines = cleaned.split('\n')
+    filtered_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('[') and '>' in stripped:
+            continue
+        if stripped.startswith('- [[') and '] >' in stripped:
+            continue
+        filtered_lines.append(line)
+        
+    cleaned = '\n'.join(filtered_lines)
+    return cleaned
+
+
 # --- Memory Configuration ---
 # Create a memory with: /agentbase-memory
 # Set the memory ID here or via MEMORY_ID env var
@@ -248,7 +272,22 @@ def recall(query: str) -> str:
 
     # Sort by score descending, cap at 10 results total
     ranked = sorted(seen.items(), key=lambda x: x[1], reverse=True)[:10]
-    return "\n".join(f"- {mem}" for mem, score in ranked)
+    
+    cleaned_mems = []
+    for mem, score in ranked:
+        # Remove metadata tags prefix (e.g. [[PCT-CX]...] > )
+        cleaned_mem = re.sub(r'^\[+[^>]+\]+\s*>\s*', '', mem).strip()
+        # Skip empty or meaningless lines
+        if not cleaned_mem or cleaned_mem in ["-", "MEDIUM", "HIGH", "LOW"]:
+            continue
+        # Skip lines that only map service names to hyphens or levels (e.g., mt-common-api: -)
+        if re.match(r'^[\w-]+\s*:\s*(?:-|medium|high|low|none|null)$', cleaned_mem, re.IGNORECASE):
+            continue
+        cleaned_mems.append(f"- {cleaned_mem}")
+        
+    if not cleaned_mems:
+        return "No relevant memories found."
+    return "\n".join(cleaned_mems)
 
 
 # --- Create Agent with Checkpointer ---
@@ -314,9 +353,8 @@ def handler(payload: dict, context: RequestContext):
                 if content:
                     accumulated_text += content
                     
-                    # Post-processing to enforce brand spelling "Zalopay" strictly
-                    corrected_text = re.sub(r'(?i)zalo\s*pay', 'Zalopay', accumulated_text)
-                    corrected_text = re.sub(r'(?i)\bzalo\b', 'Zalopay', corrected_text)
+                    # Post-processing to enforce brand spelling and clean memory leakage
+                    corrected_text = clean_bot_response(accumulated_text)
                     
                     if len(corrected_text) > sent_length:
                         delta = corrected_text[sent_length:]
@@ -335,8 +373,7 @@ def handler(payload: dict, context: RequestContext):
 
         # Log the full question and response
         try:
-            final_response = re.sub(r'(?i)zalo\s*pay', 'Zalopay', accumulated_text)
-            final_response = re.sub(r'(?i)\bzalo\b', 'Zalopay', final_response)
+            final_response = clean_bot_response(accumulated_text)
             
             chat_entry = {
                 "timestamp": datetime.now().isoformat(),
