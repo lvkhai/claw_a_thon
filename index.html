@@ -135,30 +135,7 @@
             overflow-y: auto;
         }
 
-        .new-chat-btn {
-            background-color: #fff;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: var(--shadow);
-            transition: all 0.2s ease;
-        }
-        body.dark-mode .new-chat-btn {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
 
-        .new-chat-btn:hover {
-            background-color: var(--nav-item-hover);
-            transform: translateY(-1px);
-        }
 
         .sidebar-section {
             display: flex;
@@ -1358,10 +1335,7 @@
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <!-- New Chat -->
-            <button class="new-chat-btn" id="new-chat-btn">
-                New Chat
-            </button>
+
 
             <!-- Mode Selector -->
             <div class="sidebar-section" style="display: none !important;">
@@ -1685,7 +1659,7 @@
         let appMode = 'training'; // 'training' or 'qa'
         let currentModuleIndex = 0; // 0 to 4
         let currentQuestionIndex = 0; // index inside active module questions
-        let completedModules = JSON.parse(localStorage.getItem('qec_completed_modules') || '[]');
+        let completedModules = [];
         let isRequestInProgress = false;
         let currentFetchController = null;
         
@@ -1711,14 +1685,12 @@
         const referencesModal = document.getElementById('references-modal');
         const resourceBox = document.getElementById('resource-box');
         const modalCloseBtn = document.getElementById('modal-close-btn');
-        const newChatBtn = document.getElementById('new-chat-btn');
         const welcomeScreen = document.getElementById('welcome-screen');
 
         // User identity configuration
         let userId = localStorage.getItem('agentbase_user_id') || 'user_' + Math.random().toString(36).substring(2, 11);
         localStorage.setItem('agentbase_user_id', userId);
-        let sessionId = localStorage.getItem('agentbase_session_id') || 'session_' + Math.random().toString(36).substring(2, 11);
-        localStorage.setItem('agentbase_session_id', sessionId);
+        let sessionId = 'session_' + Math.random().toString(36).substring(2, 11);
 
         // Sidebar responsive toggle
         sidebarToggle.addEventListener('click', () => {
@@ -1925,7 +1897,6 @@
                 
                 if (!completedModules.includes(mod.id)) {
                     completedModules.push(mod.id);
-                    localStorage.setItem('qec_completed_modules', JSON.stringify(completedModules));
                 }
             }
 
@@ -2475,34 +2446,6 @@
             if (e.key === 'Enter') sendMessage(chatInput.value);
         });
 
-        newChatBtn.addEventListener('click', () => {
-            if (confirm('Bạn có chắc chắn muốn xóa lịch sử chat và bắt đầu một phiên làm việc mới?')) {
-                if (currentFetchController) {
-                    currentFetchController.abort();
-                    currentFetchController = null;
-                }
-                Object.keys(activeBotMessages).forEach(id => delete activeBotMessages[id]);
-                removeTypingIndicator();
-                isRequestInProgress = false;
-                sendBtn.disabled = false;
-
-                sessionId = 'session_' + Math.random().toString(36).substring(2, 11);
-                localStorage.setItem('agentbase_session_id', sessionId);
-                completedModules = [];
-                localStorage.setItem('qec_completed_modules', '[]');
-                currentModuleIndex = 0;
-                currentQuestionIndex = 0;
-
-                clearChatArea();
-                if (appMode === 'training') {
-                    startTrainingFlow();
-                } else {
-                    showQAWelcome();
-                }
-                renderSidebarNav();
-                alert('Đã reset phiên làm việc thành công.');
-            }
-        });
 
         function loadHistoryChat(topic) {
             switchMode('training');
