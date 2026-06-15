@@ -301,13 +301,18 @@ def recall(query: str) -> str:
 
 
 # --- Create Agent with Checkpointer ---
-# Load system prompt from file (git-ignored for security/confidentiality)
+# Load system prompt: env var (deployed) → local file (dev) → hardcoded fallback
+import base64 as _b64
 try:
-    prompt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "system_prompt.txt")
-    with open(prompt_path, "r", encoding="utf-8") as f:
-        SYSTEM_PROMPT = f.read()
-except Exception as e:
-    SYSTEM_PROMPT = "Bạn là Trợ lý Onboarding hỗ trợ riêng cho các thành viên QE mới gia nhập (không dành cho Frontend, Developer, hay PO) thuộc đội ngũ QE_Consumer Team tại Zalopay. Bạn có thắc mắc hay muốn đi vào phần nào ở Zalopay không?"
+    _encoded = os.environ.get("SYSTEM_PROMPT_B64", "")
+    if _encoded:
+        SYSTEM_PROMPT = _b64.b64decode(_encoded).decode("utf-8")
+    else:
+        _prompt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "system_prompt.txt")
+        with open(_prompt_path, "r", encoding="utf-8") as _f:
+            SYSTEM_PROMPT = _f.read()
+except Exception:
+    SYSTEM_PROMPT = "Bạn là Trợ lý Onboarding hỗ trợ riêng cho các thành viên QE mới gia nhập thuộc đội ngũ QE_Consumer Team tại Zalopay."
 
 # create_agent builds a compiled LangGraph StateGraph with tool-calling support.
 # checkpointer: persists conversation state via AgentBase Memory (short-term)
