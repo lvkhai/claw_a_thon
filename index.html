@@ -1601,8 +1601,10 @@
             // Deleted all confetti triggers to enforce professional tone
         }
 
+        let isAuthenticated = false;
+
         function checkAuth() {
-            if (sessionStorage.getItem('zlp_auth') === 'true') {
+            if (isAuthenticated) {
                 loginOverlay.style.display = 'none';
             } else {
                 loginOverlay.style.display = 'flex';
@@ -1611,7 +1613,7 @@
 
         function performAuth() {
             if (passwordInput.value === 'pqe_pct') {
-                sessionStorage.setItem('zlp_auth', 'true');
+                isAuthenticated = true;
                 loginOverlay.style.display = 'none';
             } else {
                 authError.textContent = 'Mật khẩu không chính xác. Vui lòng nhập lại.';
