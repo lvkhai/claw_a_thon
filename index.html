@@ -1489,9 +1489,9 @@
                         <h2>Chào mừng bạn gia nhập team!</h2>
                         <p>Xin chào! Tôi là Trợ lý Onboarding của đội ngũ QE_Consumer Team tại Zalopay. Tôi ở đây để hỗ trợ bạn nắm vững quy trình thông qua lộ trình học các Module tích hợp dưới đây.</p>
                         <div class="suggestion-chips" style="justify-content: center; width: 100%;">
-                            <div class="chip" onclick="sendQuickMessage('Quy trình làm việc (workflow) của dự án và các công cụ chính là gì?')">Quy trình làm việc và công cụ</div>
-                            <div class="chip" onclick="sendQuickMessage('Tài liệu onboarding này dành cho đối tượng nào?')">Đối tượng đào tạo</div>
-                            <div class="chip" onclick="sendQuickMessage('p2p flow và testcases cần làm, risk là gì?')">Luồng P2P và kịch bản kiểm thử</div>
+                            <div class="chip" onclick="sendMessage('Quy trình làm việc (workflow) của dự án và các công cụ chính là gì?')">Quy trình làm việc và công cụ</div>
+                            <div class="chip" onclick="sendMessage('Tài liệu onboarding này dành cho đối tượng nào?')">Đối tượng đào tạo</div>
+                            <div class="chip" onclick="sendMessage('p2p flow và testcases cần làm, risk là gì?')">Luồng P2P và kịch bản kiểm thử</div>
                         </div>
                     </div>
                 </main>
@@ -1624,10 +1624,10 @@
                     loginOverlay.style.display = 'none';
                     return;
                 }
+                authError.textContent = 'Mật khẩu không chính xác. Vui lòng nhập lại.';
             } catch (e) {
-                // network error — fall through to error message
+                authError.textContent = 'Lỗi kết nối máy chủ. Vui lòng thử lại.';
             }
-            authError.textContent = 'Mật khẩu không chính xác. Vui lòng nhập lại.';
             passwordInput.value = '';
             passwordInput.focus();
         }
@@ -1686,6 +1686,8 @@
         let currentModuleIndex = 0; // 0 to 4
         let currentQuestionIndex = 0; // index inside active module questions
         let completedModules = JSON.parse(localStorage.getItem('qec_completed_modules') || '[]');
+        let isRequestInProgress = false;
+        let currentFetchController = null;
         
         // Element references
         const messagesArea = document.getElementById('messages-area');
@@ -1821,9 +1823,9 @@
                     <h2>Chế độ Hỏi đáp Tự do</h2>
                     <p>Hãy hỏi tôi bất kỳ điều gì về quy trình QE, các tài khoản test, API, lỗi MMF, template viết bug report hoặc chiến lược kiểm thử tại Zalopay.</p>
                     <div class="suggestion-chips" style="justify-content: center; width: 100%;">
-                        <div class="chip" onclick="sendQuickMessage('Quy trình làm việc (workflow) của dự án và các công cụ chính là gì?')">Quy trình làm việc và công cụ</div>
-                        <div class="chip" onclick="sendQuickMessage('p2p flow và testcases cần làm, risk là gì?')">Luồng P2P và kịch bản kiểm thử</div>
-                        <div class="chip" onclick="sendQuickMessage('Tài liệu onboarding này dành cho đối tượng nào?')">Đối tượng hỗ trợ onboarding</div>
+                        <div class="chip" onclick="sendMessage('Quy trình làm việc (workflow) của dự án và các công cụ chính là gì?')">Quy trình làm việc và công cụ</div>
+                        <div class="chip" onclick="sendMessage('p2p flow và testcases cần làm, risk là gì?')">Luồng P2P và kịch bản kiểm thử</div>
+                        <div class="chip" onclick="sendMessage('Tài liệu onboarding này dành cho đối tượng nào?')">Đối tượng hỗ trợ onboarding</div>
                     </div>
                 </div>
             `;
@@ -1852,7 +1854,7 @@
                 const chip = document.createElement('div');
                 chip.className = 'chip';
                 chip.textContent = c;
-                chip.addEventListener('click', () => sendQuickMessage(c));
+                chip.addEventListener('click', () => sendMessage(c));
                 suggestionChipsContainer.appendChild(chip);
             });
         }
@@ -2079,14 +2081,6 @@
                 feedbackContainer.appendChild(likeBtn);
                 feedbackContainer.appendChild(dislikeBtn);
                 bubble.appendChild(feedbackContainer);
-
-                if (appMode === 'training') {
-                    document.querySelectorAll('.quiz-actions-container').forEach(el => el.remove());
-                    const actions = createTrainingActions();
-                    if (actions) {
-                        bubble.appendChild(actions);
-                    }
-                }
             }
 
             row.appendChild(wrapper);
@@ -2096,6 +2090,7 @@
 
         // Simple text formatter for Basic Markdown support
         function formatText(text) {
+            if (!text) return '';
             let formatted = text
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
@@ -2365,20 +2360,17 @@
             feedbackContainer.appendChild(dislikeBtn);
             bubble.appendChild(feedbackContainer);
 
-            if (appMode === 'training') {
-                document.querySelectorAll('.quiz-actions-container').forEach(el => el.remove());
-                const actions = createTrainingActions();
-                if (actions) {
-                    bubble.appendChild(actions);
-                }
-            }
-
             delete activeBotMessages[messageId];
         }
 
         // Send Message Handler
         async function sendMessage(text) {
             if (!text.trim()) return;
+            if (isRequestInProgress) return;
+            isRequestInProgress = true;
+            sendBtn.disabled = true;
+            if (currentFetchController) currentFetchController.abort();
+            currentFetchController = new AbortController();
 
             // In training mode, if they ask a question outside choices, prepend module context to give LLM high relevance
             let requestText = text;
@@ -2403,7 +2395,8 @@
                         'X-GreenNode-AgentBase-User-Id': userId,
                         'X-GreenNode-AgentBase-Session-Id': sessionId
                     },
-                    body: JSON.stringify({ message: requestText })
+                    body: JSON.stringify({ message: requestText }),
+                    signal: currentFetchController.signal
                 });
 
                 if (!response.ok) {
@@ -2444,6 +2437,15 @@
                             }
                         }
                     }
+                    // Process any data remaining in buffer after stream ends
+                    if (buffer.trim().startsWith('data: ')) {
+                        try {
+                            const parsed = JSON.parse(buffer.trim().slice(6));
+                            if (parsed.status === 'success' && parsed.response) {
+                                updateBotMessage(botMessageId, parsed.response);
+                            }
+                        } catch (e) {}
+                    }
                     finalizeBotMessage(botMessageId);
                 } else {
                     removeTypingIndicator();
@@ -2455,14 +2457,16 @@
                     }
                 }
             } catch (err) {
-                removeTypingIndicator();
-                appendMessage('bot', '❌ Lỗi kết nối: Server AgentBase không phản hồi.', text);
-                console.error(err);
+                if (err.name !== 'AbortError') {
+                    removeTypingIndicator();
+                    appendMessage('bot', '❌ Lỗi kết nối: Server AgentBase không phản hồi.', text);
+                    console.error(err);
+                }
+            } finally {
+                isRequestInProgress = false;
+                sendBtn.disabled = false;
+                currentFetchController = null;
             }
-        }
-
-        function sendQuickMessage(text) {
-            sendMessage(text);
         }
 
         // Global Action Event listeners
@@ -2473,13 +2477,22 @@
 
         newChatBtn.addEventListener('click', () => {
             if (confirm('Bạn có chắc chắn muốn xóa lịch sử chat và bắt đầu một phiên làm việc mới?')) {
+                if (currentFetchController) {
+                    currentFetchController.abort();
+                    currentFetchController = null;
+                }
+                Object.keys(activeBotMessages).forEach(id => delete activeBotMessages[id]);
+                removeTypingIndicator();
+                isRequestInProgress = false;
+                sendBtn.disabled = false;
+
                 sessionId = 'session_' + Math.random().toString(36).substring(2, 11);
                 localStorage.setItem('agentbase_session_id', sessionId);
                 completedModules = [];
                 localStorage.setItem('qec_completed_modules', '[]');
                 currentModuleIndex = 0;
                 currentQuestionIndex = 0;
-                
+
                 clearChatArea();
                 if (appMode === 'training') {
                     startTrainingFlow();

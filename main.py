@@ -102,8 +102,11 @@ llm = ChatOpenAI(
 
 def _get_actor_id() -> str:
     """Get actor_id from LangGraph configurable (set during graph.invoke)."""
-    config = get_config()
-    return config["configurable"].get("actor_id", "default")
+    try:
+        config = get_config()
+        return config["configurable"].get("actor_id", "default")
+    except Exception:
+        return "default"
 
 
 # Shared namespace for team-wide knowledge (IBFT guides, testing docs, etc.)
@@ -337,6 +340,8 @@ def handler(payload: dict, context: RequestContext):
             return
 
         message = payload.get("message", "Hello")
+        if len(message) > 5000:
+            message = message[:5000]
 
         # Map AgentBase context to LangGraph config
         # thread_id -> session persistence, actor_id -> per-user memory
@@ -462,8 +467,9 @@ async def serve_links(request):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         return JSONResponse(data)
-    except Exception:
-        return JSONResponse({})
+    except Exception as e:
+        print(f"serve_links error: {e}")
+        return JSONResponse({}, status_code=500)
 
 app.add_route("/auth", auth_endpoint, methods=["POST"])
 app.add_route("/links", serve_links, methods=["GET"])
