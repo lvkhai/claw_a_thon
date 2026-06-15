@@ -2052,6 +2052,12 @@
                 feedbackContainer.appendChild(likeBtn);
                 feedbackContainer.appendChild(dislikeBtn);
                 bubble.appendChild(feedbackContainer);
+
+                // Move existing training action buttons to the bottom of this response
+                if (appMode === 'training') {
+                    const existingActions = document.querySelector('.quiz-actions-container');
+                    if (existingActions) bubble.appendChild(existingActions);
+                }
             }
 
             row.appendChild(wrapper);
@@ -2330,6 +2336,12 @@
             feedbackContainer.appendChild(likeBtn);
             feedbackContainer.appendChild(dislikeBtn);
             bubble.appendChild(feedbackContainer);
+
+            // Move existing training action buttons to the bottom of this response
+            if (appMode === 'training') {
+                const existingActions = document.querySelector('.quiz-actions-container');
+                if (existingActions) bubble.appendChild(existingActions);
+            }
 
             delete activeBotMessages[messageId];
         }
